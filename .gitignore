@@ -9,5 +9,7 @@ Makefile
 Makefile.in
 config.status
 configure
+install-sh
 pre-inst-env
 test-env
+missing
