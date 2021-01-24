@@ -2,6 +2,8 @@
 
 (define-module (orgfile sxml)
   #:use-module (orgfile parser)
+  #:use-module (orgfile node)
+  #:use-module (orgfile blocks)
   #:use-module (srfi srfi-1)
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-9)
@@ -15,35 +17,34 @@ sxml."
   (let ((port (if (string? string-or-port)
                   (open-input-string string-or-port)
                   string-or-port)))
-    ;;TODO
     (document->sxml (parse-blocks port))))
 
-(define (initialBlock->sxml initialBlock)
-  `(p ,@(node->sxml (node-children initialBlock))))
-
-(define (block->sxml block)
-  `(div ,(header->sxml (assq-ref block 'header))
-    (p ,@(node->sxml (node-children block)))))
-
-(define (header->sxml header)
-  (let ((num (min (string-length (car (assoc-ref header 'level))) 4)))
-    `(,(string->symbol (string-append "h" (number->string num))) ,(car (assoc-ref header 'title)))))
-
-(define (node-children node)
-  ;;TODO: this is just a dummy
-  (assoc 'content (cdr node)))
+(define (document->sxml d)
+  (if (document-node? d)
+      (fold+convert (node-children d))
+      (error "not a document node")))
 
 (define (node->sxml n)
-  (if (list? n)
-      (let ((nname (car n)))
-        (cond ((eq? nname 'initialBlock) (initialBlock->sxml n))
-              ((eq? nname 'block) (block->sxml n))
-              ((eq? nname 'content) `(,(cadr n)))))
-      #f))
+  (cond ((section-node? n) (section-node->sxml n))
+        ((paragraph-node? n) (paragraph-node->sxml n))
+        ((text-node? n) (text-node->sxml n))
+        (else (error "unrecognized node"))))
 
-(define (document->sxml doc)
-  (if (eq? doc #f)
-      #f
-      (cons
-       'div
-       (map node->sxml doc))))
+(define (section-node->sxml n)
+  ;;TODO tags
+  (let* ((level (node-get-data n 'level))
+         (headline (node-get-data n 'headline))
+         (htag (string->symbol (string-append "h" (number->string (min 4 level))))))
+    `(div (,htag ,headline) ,@(fold+convert (node-children n)))))
+
+(define (paragraph-node->sxml n)
+  (let ((folded (fold+convert (node-children n))))
+    `(p ,@folded)))
+
+(define (text-node->sxml n)
+  (string-join (node-children n)))
+
+(define (fold+convert lst)
+  (define (convert+cons elem prev)
+    (cons (node->sxml elem) prev))
+  (fold convert+cons '() lst))

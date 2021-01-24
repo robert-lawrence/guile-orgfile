@@ -1,8 +1,11 @@
 include guile.am
 
 SOURCES =                           \
+  orgfile/blocks.scm                \
+  orgfile/common.scm                \
   orgfile/parser.scm                \
   orgfile/sxml.scm                  \
+  orgfile/utils.scm                 \
   orgfile.scm
 
 SCM_LOG_DRIVER =                               \
