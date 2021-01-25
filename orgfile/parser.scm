@@ -22,6 +22,7 @@
             parser-rest-str
             empty-line
             section-headline
+            section-tags
             ))
 
 
@@ -127,6 +128,7 @@
 
 (define re-empty-line (make-regexp "^[ \t]*$"))
 (define re-section-headline (make-regexp "^\\*+ "))
+(define re-section-tags (make-regexp "[ \t](:[^ \t]+)+:[ \t]*$"))
 
 
 (define (empty-line parser)
@@ -134,3 +136,6 @@
 
 (define (section-headline parser)
   (regexp-exec re-section-headline (parser-str parser) (parser-pos parser)))
+
+(define (section-tags parser)
+  (regexp-exec re-section-tags (parser-str parser) (parser-pos parser)))

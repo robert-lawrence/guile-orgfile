@@ -34,8 +34,9 @@ sxml."
   ;;TODO tags
   (let* ((level (node-get-data n 'level))
          (headline (node-get-data n 'headline))
+         (tags (node-get-data n 'tags))
          (htag (string->symbol (string-append "h" (number->string (min 4 level))))))
-    `(div (,htag ,headline) ,@(fold+convert (node-children n)))))
+    `(div (@ (class ,(string-join tags " "))) (,htag ,headline) ,@(fold+convert (node-children n)))))
 
 (define (paragraph-node->sxml n)
   (let ((folded (fold+convert (node-children n))))

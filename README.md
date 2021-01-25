@@ -9,6 +9,8 @@ Planned features:
 - [x] Parse document tree into sections, with headers exported as \<h1\>-\<h4\> tags and
       section text exported as a \<p\> tag
 - [ ] Parse links, export using \<a\> tag
-- [ ] Wrap header in div that covers all subheaders
-- [ ] Parse org tags, convert to html class attributes for div
-- [ ] Parse org code blocks, export using \<pre\>
+- [x] Wrap header in div that covers all subheaders
+- [x] Parse org tags, convert to html class attributes for div
+- [ ] Parse org lists
+- [ ] Parse org tables
+- [ ] Parse org code blocks

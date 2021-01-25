@@ -150,8 +150,8 @@
 
 ;; Section Node
 ;; Sections begin with asterisks and define the structure of an org document
-(define (make-section-node level text)
-  (make-node 'section `((level . ,level) (headline ,text) (closed . #f))))
+(define* (make-section-node level text #:optional (tags '()))
+  (make-node 'section `((level . ,level) (headline . ,text) (tags . ,tags) (closed . #f))))
 
 ;; Node -> Boolean
 (define (section-node? n)

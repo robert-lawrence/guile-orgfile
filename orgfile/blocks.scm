@@ -93,8 +93,18 @@
   ;;TODO tags
   (let* ((level (- (match:end match) 1))
          (str (parser-rest-str parser))
-         (headline (substring str level)))
-    (make-section-node level headline)))
+         (tag-match (section-tags parser))
+         (headline (if tag-match
+                       (substring str (+ level 1) (match:start tag-match))
+                       (substring str (+ level 1))))
+         (tags (if tag-match
+                   (get-section-tags (substring str (match:start tag-match)))
+                   '())))
+    (make-section-node level headline tags)))
+
+(define (get-section-tags str)
+  ;;remove first and last element
+  (reverse (cdr (reverse (cdr (string-split str #\:))))))
 
 (define (make-paragraph parser)
   (make-paragraph-node (parser-rest-str parser)))
