@@ -19,10 +19,13 @@
             parser-advance-next-nonspace
             parser-advance-min-spaces
             parser-advance-next-line
+            parser-indented?
+            parser-indent
             parser-rest-str
             empty-line
             section-headline
             section-tags
+            list-item
             ))
 
 
@@ -113,6 +116,12 @@
                (loop (+ pos 1) (+ col col-change))))
             (else (loop (+ pos 1) (+ col 1)))))))
 
+(define (parser-indented? start end)
+  (>= (- (parser-col end) (parser-col start)) 1))
+
+(define (parser-indent start end)
+  (- (parser-col end) (parser-col start)))
+
 (define (parser-rest-str parser)
   (let ((str (parser-str parser))
         (pos (parser-pos parser)))
@@ -129,6 +138,7 @@
 (define re-empty-line (make-regexp "^[ \t]*$"))
 (define re-section-headline (make-regexp "^\\*+ "))
 (define re-section-tags (make-regexp "[ \t](:[^ \t]+)+:[ \t]*$"))
+(define re-list-item (make-regexp "^[1-9][:digit:]*\\) |^[1-9][:digit:]*\\. |^- |^\\+ |^\\* "))
 
 
 (define (empty-line parser)
@@ -139,3 +149,6 @@
 
 (define (section-tags parser)
   (regexp-exec re-section-tags (parser-str parser) (parser-pos parser)))
+
+(define (list-item parser)
+  (regexp-exec re-list-item (parser-str parser) (parser-pos parser)))

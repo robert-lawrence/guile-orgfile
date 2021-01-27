@@ -3,6 +3,8 @@ include guile.am
 SOURCES =                           \
   orgfile/blocks.scm                \
   orgfile/common.scm                \
+  orgfile/entities.scm              \
+  orgfile/node.scm                  \
   orgfile/parser.scm                \
   orgfile/sxml.scm                  \
   orgfile/utils.scm                 \

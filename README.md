@@ -6,11 +6,11 @@ written in Guile Scheme. It is not feature complete and is under active developm
 
 Planned features:
 
-- [x] Parse document tree into sections, with headers exported as \<h1\>-\<h4\> tags and
+- [x] Parse document tree into sections, with headers exported as \<h1\>-\<h6\> tags and
       section text exported as a \<p\> tag
 - [ ] Parse links, export using \<a\> tag
 - [x] Wrap header in div that covers all subheaders
 - [x] Parse org tags, convert to html class attributes for div
-- [ ] Parse org lists
+- [x] Parse org lists
 - [ ] Parse org tables
 - [ ] Parse org code blocks

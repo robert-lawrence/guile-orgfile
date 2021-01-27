@@ -84,17 +84,15 @@
 ;; - 'document
 ;; - 'section
 ;; - 'headline
-
+;; - paragraph
+;; - text
+;; TODO: the following need to be implemented
 ;; - 'drawer
-;; - 'paragraph
 ;; - 'table
 ;; - 'code-block
 ;; - 'quote-block
 ;; - 'list
 ;; - 'item
-;; - 'blank - parser only, not in returned value
-;; - 'text
-
 ;; - 'code-span
 ;; - 'emphasis - either underline, bold, italic or strikethrough
 ;; - 'link
@@ -215,11 +213,11 @@
 ;; Item node
 ;; represents a item which can only be in a list
 ;; Node -> Node
-(define (make-item-node node padding)
-  (make-node 'item `((padding . ,padding))
-             (if (or (not node) (blank-node? node))
+(define (make-item-node indent child)
+  (make-node 'item `((indent . ,indent))
+             (if (or (not child) (blank-node? child))
                  '()
-                 (list node))))
+                 (list child))))
 
 ;; Node -> Boolean
 (define (item-node? n)

@@ -26,6 +26,8 @@ sxml."
 
 (define (node->sxml n)
   (cond ((section-node? n) (section-node->sxml n))
+        ((list-node? n) (list-node->sxml n))
+        ((item-node? n) (item-node->sxml n))
         ((paragraph-node? n) (paragraph-node->sxml n))
         ((text-node? n) (text-node->sxml n))
         (else (error "unrecognized node"))))
@@ -35,15 +37,23 @@ sxml."
   (let* ((level (node-get-data n 'level))
          (headline (node-get-data n 'headline))
          (tags (node-get-data n 'tags))
-         (htag (string->symbol (string-append "h" (number->string (min 4 level))))))
+         (htag (string->symbol (string-append "h" (number->string (min 6 level))))))
     `(div (@ (class ,(string-join tags " "))) (,htag ,headline) ,@(fold+convert (node-children n)))))
+
+(define (list-node->sxml n)
+  (let* ((ordered? (node-get-data n 'ordered))
+         (list-type (if ordered? 'ol 'ul)))
+    `(,list-type ,(fold+convert (node-children n)))))
+
+(define (item-node->sxml n)
+  `(li ,(fold+convert (node-children n))))
 
 (define (paragraph-node->sxml n)
   (let ((folded (fold+convert (node-children n))))
     `(p ,@folded)))
 
 (define (text-node->sxml n)
-  (string-join (node-children n)))
+  (string-join (reverse (node-children n))))
 
 (define (fold+convert lst)
   (define (convert+cons elem prev)

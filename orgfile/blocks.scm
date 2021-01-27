@@ -22,7 +22,7 @@
   (let loop ((root (make-document-node))
              (line (read-line-without-nul port)))
     (if (eof-object? line)
-        ;;TODO clean up
+        ;;TODO clean up list items with only one child (paragraph)
         root
         (loop (parse-open-block root (make-parser line))
               (read-line-without-nul port)))))
@@ -36,7 +36,8 @@
         ;; TODO table
         ;((code-block-node? node) (parse-code-block node parser))
         ;((block-quote-node? node) (parse-block-quote node parser))
-        ;((list-node? node) (parse-list node parser))
+        ((list-node? node) (parse-list node parser))
+        ; items always under list, list does not call this fn
         ;((item-node? node) (parse-item node parser))
         ((paragraph-node? node) (parse-paragraph node parser))))
 
@@ -67,6 +68,37 @@
          (close-node node))
         (else (parse-container-block node parser))))
 
+(define (parse-list node parser)
+  (let* ((nonspace-parser (parser-advance-next-nonspace parser))
+         (line-indent (parser-indent parser nonspace-parser))
+         (item-match (list-item nonspace-parser))
+         (list-indent (node-get-data node 'indent))
+         (node (if (and (not (empty-line parser)) (node-get-data node 'last-line-empty))
+                   (node-add-data node 'last-line-empty #f)
+                   node))
+         (child (last-child node)))
+    (cond ((and (empty-line parser) (eq? (node-get-data node 'last-line-empty) #t))
+           (close-node node))
+          ((empty-line parser)
+           (node-add-data node 'last-line-empty #t))
+          ((< line-indent list-indent)
+           (close-node node))
+          ((eqv? line-indent list-indent)
+           (if item-match
+               (add-child-node node (make-item nonspace-parser list-indent item-match))
+               (close-node node)))
+          (else (replace-last-child node (parse-item (last-child node) parser nonspace-parser))))))
+
+(define (parse-item node parser nonspace-parser)
+;; item node is always created with a child
+  (let ((child (last-child node)))
+    (if (node-closed? child)
+        (add-child-node node (parse-line parser))
+        (let ((new-child (parse-open-block child parser)))
+          (if (node-closed? new-child)
+              (add-child-node node (parse-line parser))
+              (replace-last-child node new-child))))))
+
 (define (parse-paragraph node parser)
   (let ((parsed-line (parse-line parser)))
     (cond ((section-node? parsed-line)
@@ -80,6 +112,9 @@
   (let ((nonspace-parser (parser-advance-next-nonspace parser)))
     (cond ((empty-line nonspace-parser)              (make-blank-node))
           ((section-headline parser)                => (cut make-section parser <>))
+          ((and
+            (parser-indented? parser nonspace-parser)
+            (list-item nonspace-parser))            => (cut make-new-list parser nonspace-parser <>))
           ;((parser-indented? parser nonspace-parser) (make-code-block parser))
           ;((block-quote nonspace-parser)          => make-block-quote)
           ;((atx-heading nonspace-parser)          => make-atx-heading)
@@ -90,7 +125,6 @@
 
 
 (define (make-section parser match)
-  ;;TODO tags
   (let* ((level (- (match:end match) 1))
          (str (parser-rest-str parser))
          (tag-match (section-tags parser))
@@ -101,6 +135,20 @@
                    (get-section-tags (substring str (match:start tag-match)))
                    '())))
     (make-section-node level headline tags)))
+
+(define (make-new-list parser nonspace-parser match)
+  (let* ((indent (parser-indent parser nonspace-parser))
+         (ordered (string->number (substring (parser-rest-str nonspace-parser) 0 1)))
+         (data `((ordered . ,ordered) (indent . ,indent)))
+         (item (make-item nonspace-parser indent match)))
+    (make-list-node item data)))
+
+(define (make-item nonspace-parser indent match)
+  (let* ((rest (substring (match:string match) (match:end match)))
+         (text (parse-line (make-parser rest))))
+    (if (blank-node? text)
+        (make-item-node indent (make-paragraph (make-parser rest)))
+        (make-item-node indent text))))
 
 (define (get-section-tags str)
   ;;remove first and last element
