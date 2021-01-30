@@ -30,16 +30,35 @@
 ;; Node Parser -> Node
 (define (parse-open-block node parser)
   (cond ((node-closed? node) node)
-        ((document-node? node) (parse-container-block node parser))
+        ((document-node? node) (parse-document-block node parser))
         ((section-node? node) (parse-section-block node parser))
         ;((drawer-node? node) (parse-drawer node parser))
-        ;; TODO table
+        ;((table-node? node) (parse-table node parser))
         ;((code-block-node? node) (parse-code-block node parser))
-        ;((block-quote-node? node) (parse-block-quote node parser))
         ((list-node? node) (parse-list node parser))
         ; items always under list, list does not call this fn
         ;((item-node? node) (parse-item node parser))
         ((paragraph-node? node) (parse-paragraph node parser))))
+
+;; read metadata from beginning of file
+;; Node Parser -> Node
+(define (parse-document-block node parser)
+  (define (add-metadata node match)
+    (let* ((str (match:string match))
+           (key (string-downcase
+                 (substring str
+                            (+ 2 (match:start match))
+                            (- (match:end match) 1))))
+           (value (parser-rest-str
+                   (parser-advance-next-nonspace
+                    (make-parser (substring str (match:end match)))))))
+      (node-add-data node (string->symbol key) value)))
+  (if (node-get-data node '__init)
+      (cond ((metadata parser) => (cut add-metadata node <>))
+            (else (node-add-data (parse-container-block node parser)
+                                 '__init
+                                 #f)))
+      (parse-container-block node parser)))
 
 ;; Node Parser -> Node
 (define (parse-container-block node parser)

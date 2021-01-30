@@ -8,12 +8,13 @@ Planned features:
 
 - [x] Parse document tree into sections, with headers exported as \<h1\>-\<h6\> tags and
       section text exported as a \<p\> tag
-- [ ] Parse links, export using \<a\> tag
+- [x] Parse links, export using \<a\> tag
 - [x] Wrap header in div that covers all subheaders
 - [x] Parse org tags, convert to html class attributes for div
 - [x] Parse org lists
-- [ ] Parse org tables
+- [ ] Parse bold, italic, underlined and strikethrough text
 - [ ] Parse org code blocks
+- [ ] Parse org tables
 
 Usage
 -----
@@ -22,10 +23,10 @@ Usage
 (use-modules (orgfile)
              (sxml simple))
 
-(define doc
+(define org-text
   "* A typical org file
 
-a paragraph
+a paragraph with an [[http://example.com][example link]]
 
 ** Sections can be nested
 
@@ -36,10 +37,10 @@ a paragraph
  another paragraph.")
 
 ;; Parse the org document
-(define org-sxml (orgfile->sxml doc))
+(define doc (parse-orgfile org-text))
 
-;; Write the document to current output port
-(sxml->xml org-sxml)
+;; Convert the document to sxml and write to current output port
+(sxml->xml (orgfile->sxml doc))
 ```
 
 

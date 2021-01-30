@@ -28,6 +28,7 @@
             node-add-data
             node-closed?
             no-children?
+            postorder-node-transform
             make-document-node
             document-node?
             make-section-node
@@ -48,12 +49,12 @@
             list-node?
             make-item-node
             item-node?
-            make-heading-node
-            heading-node?
             make-text-node
             join-text-nodes
             add-text
             text-node?
+            make-link-node
+            link-node?
             make-softbreak-node
             softbreak-node?
             make-hardbreak-node
@@ -64,8 +65,6 @@
             code-span-node?
             make-emphasis-node
             emphasis-node?
-            make-link-node
-            link-node?
             make-image-node
             image-node?
             child-closed?
@@ -126,6 +125,17 @@
 (define (node-closed? node)
   (node-get-data node 'closed))
 
+;; fn accepts (node-type node-data node-children) and must
+;; return a node. node tree is traversed in postorder, children
+;; before parents.
+(define (postorder-node-transform fn n)
+  (fn (node-type n)
+      (node-data n)
+      (map (lambda (child)
+             (if (node? child)
+                 (postorder-node-transform fn child)
+                 child))
+           (node-children n))))
 
 ;; (listof Node) -> Boolean
 ;; returns true if the n has no children
@@ -139,8 +149,9 @@
 
 ;; Document node
 ;; A document node is the root of a org document
+;; when __init is set, read metadata from top of file
 (define (make-document-node)
-  (make-node 'document))
+  (make-node 'document '((__init . #t))))
 
 ;; Node -> Boolean
 (define (document-node? n)
@@ -224,20 +235,6 @@
   (node-type? n 'item))
 
 
-;; Level is an Integer [1-6]
-;; Heading node
-;; represents either a atx heading or setext heading
-;; String Level -> Node
-(define (make-heading-node text level)
-  (make-node 'heading
-             `((level . ,level)
-               (closed . #t))
-             (list (make-text-node (string-trim-both text))) ))
-
-;; Node -> Boolean
-(define (heading-node? n)
-  (node-type? n 'heading))
-
 ;; Text node
 ;; String Boolean -> Node
 (define (make-text-node text)
@@ -255,6 +252,16 @@
 
 (define (text-node? n)
   (node-type? n 'text))
+
+(define (make-link-node url description)
+  (make-node 'link
+             `((url . ,url)
+               (description . ,(if description description ""))
+               (closed . #t))
+             '()))
+
+(define (link-node? n)
+  (node-type? n 'link))
 
 ;; Softbreak node
 (define (make-softbreak-node)
@@ -292,14 +299,6 @@
 
 (define (emphasis-node? node)
   (node-type? node 'emphasis))
-
-;; Link node
-(define (make-link-node nodes destination title)
-  (make-node 'link `((destination . ,destination)
-                     (title . ,title)) nodes))
-
-(define (link-node? node)
-  (node-type? node 'link))
 
 (define (make-image-node nodes destination title)
   (make-node 'image `((destination . ,destination)

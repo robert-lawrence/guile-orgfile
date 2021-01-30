@@ -6,10 +6,8 @@
   #:use-module (srfi srfi-2)
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-26)
-  #:use-module (sxml simple)
   #:use-module (ice-9 regex)
   #:use-module (ice-9 peg)
-  #:use-module (ice-9 textual-ports)
 
   #:export (make-parser
             parser-char=?
@@ -26,6 +24,8 @@
             section-headline
             section-tags
             list-item
+            metadata
+            uri-link
             ))
 
 
@@ -139,7 +139,37 @@
 (define re-section-headline (make-regexp "^\\*+ "))
 (define re-section-tags (make-regexp "[ \t](:[^ \t]+)+:[ \t]*$"))
 (define re-list-item (make-regexp "^[1-9][:digit:]*\\) |^[1-9][:digit:]*\\. |^- |^\\+ |^\\* "))
-
+(define re-metadata (make-regexp "^#\\+[a-zA-Z]+:"))
+;; Peg for link
+(define-peg-pattern brace body (or "[" "]"))
+(define-peg-pattern doubleback body (and (ignore "\\") "\\"))
+(define-peg-pattern escaped-brace body (and (* doubleback)
+                                            (ignore "\\")
+                                            brace))
+(define-peg-pattern bslashes body (and (+ "\\") (not-followed-by (or brace "\\"))))
+;TODO: uri validation
+(define-peg-pattern link-uri all
+  (and (ignore "[")
+       (+ (or escaped-brace
+              bslashes
+              (and (not-followed-by (or "\\" "[" "]"))
+                   peg-any)))
+       (* doubleback)
+       (ignore "]")))
+;; just a copy of link-uri
+(define-peg-pattern link-description all
+  (and (ignore "[")
+       (+ (or escaped-brace
+              bslashes
+              (and (not-followed-by (or "\\" "[" "]"))
+                   peg-any)))
+       (* doubleback)
+       (ignore "]")))
+(define-peg-pattern full-link all
+  (and (ignore "[")
+       link-uri
+       (? link-description)
+       (ignore "]")))
 
 (define (empty-line parser)
   (regexp-exec re-empty-line (parser-str parser) (parser-pos parser)))
@@ -152,3 +182,9 @@
 
 (define (list-item parser)
   (regexp-exec re-list-item (parser-str parser) (parser-pos parser)))
+
+(define (metadata parser)
+  (regexp-exec re-metadata (parser-str parser) (parser-pos parser)))
+
+(define (uri-link str)
+  (search-for-pattern full-link str))

@@ -1,6 +1,7 @@
 
 
 (define-module (orgfile sxml)
+  #:use-module (orgfile inlines)
   #:use-module (orgfile parser)
   #:use-module (orgfile node)
   #:use-module (orgfile blocks)
@@ -9,15 +10,16 @@
   #:use-module (srfi srfi-9)
   #:use-module (srfi srfi-26)
   #:use-module (sxml simple)
-  #:export (orgfile->sxml))
+  #:export (document->sxml))
 
+;; unused
 (define* (orgfile->sxml #:optional (string-or-port (current-input-port)))
   "Parses an org document from the provided port or the current input port to
 sxml."
   (let ((port (if (string? string-or-port)
                   (open-input-string string-or-port)
                   string-or-port)))
-    (document->sxml (parse-blocks port))))
+    (document->sxml (parse-inlines (parse-blocks port)))))
 
 (define (document->sxml d)
   (if (document-node? d)
@@ -29,11 +31,11 @@ sxml."
         ((list-node? n) (list-node->sxml n))
         ((item-node? n) (item-node->sxml n))
         ((paragraph-node? n) (paragraph-node->sxml n))
+        ((link-node? n) (link-node->sxml n))
         ((text-node? n) (text-node->sxml n))
         (else (error "unrecognized node"))))
 
 (define (section-node->sxml n)
-  ;;TODO tags
   (let* ((level (node-get-data n 'level))
          (headline (node-get-data n 'headline))
          (tags (node-get-data n 'tags))
@@ -51,6 +53,11 @@ sxml."
 (define (paragraph-node->sxml n)
   (let ((folded (fold+convert (node-children n))))
     `(p ,@folded)))
+
+(define (link-node->sxml n)
+  (let ((url (node-get-data n 'url))
+        (desc (node-get-data n 'description)))
+    `(a (@ (href ,url)) ,desc)))
 
 (define (text-node->sxml n)
   (string-join (reverse (node-children n))))
