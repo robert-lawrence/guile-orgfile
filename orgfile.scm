@@ -35,7 +35,9 @@
   "Returns metadata read from the beginning of an orgfile as an association
 list of key value pairs. Returns false if argument is not a valid orgfile."
   (if (document-node? orgfile)
-      (node-data orgfile)
+      (filter (lambda (a)
+                (not (eq? (car a) '__init)))
+              (node-data orgfile))
       #f))
 
 (define (orgfile->sxml orgfile)

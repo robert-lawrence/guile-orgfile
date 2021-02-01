@@ -45,10 +45,9 @@
 (define (parse-document-block node parser)
   (define (add-metadata node match)
     (let* ((str (match:string match))
-           (key (string-downcase
-                 (substring str
-                            (+ 2 (match:start match))
-                            (- (match:end match) 1))))
+           (key (substring str
+                           (+ 2 (match:start match))
+                           (- (match:end match) 1)))
            (value (parser-rest-str
                    (parser-advance-next-nonspace
                     (make-parser (substring str (match:end match)))))))
